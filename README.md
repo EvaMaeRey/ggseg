@@ -1,30 +1,119 @@
 
-This branch of the ggseg project uses `ggregions` to create an alternate
-API for newcomers to brain regions.
+# ggnut
 
-First, we make this data simpler (collapse the sub-regions) so that it
-can work with the ggregions assumptions.
+This fork of the {ggseg} project uses `ggregions` to create layers
+(annotation layers ‘stamp’, and mapped geom\_\*s). It uses
+[ggseg](https://ggseg.github.io/ggseg/) data - a well thought out and
+maintained project: see the [Advances in Methods and Practices in
+Psychological
+Science](https://journals.sagepub.com/doi/10.1177/2515245920928009)
+paper.
+
+The ggnut user is expected to have little clue about the brain, (might
+confuse a [walnut](https://en.wikipedia.org/wiki/Walnut) for a brain).
+With ggnut, brain region newcomers might able to orient themselves to
+some brain regions, that they might have heard discussed in the media,
+for example, couldn’t say where they reside in the brain, looking just
+at the aseg brain atlas, and coronal view (the ggseg project encompass
+many more atlas and their regions).
+
+Thinking about mapping brain regions was a very motivating case for
+ggregions, however it’s not too clear that it makes a good usecase
+(still hopeful that it can be useful in geo context 🤞🤞
+<https://github.com/EvaMaeRey/ggusmap> or maybe less amorphous regions -
+looking for a teeth atlas!)
+
+# Getting started…
+
+Meeting the assumptions/naivite of the ggregions package. I’ve only used
+ggregions with simple 1-1 relationships, region name \<-\> region
 
 ``` r
 library(ggregions)
 library(ggplot2)
 library(dplyr)
-#> 
-#> Attaching package: 'dplyr'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     filter, lag
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
 
+ggseg::aseg$data
+#> Simple feature collection with 29 features and 4 fields
+#> Geometry type: MULTIPOLYGON
+#> Dimension:     XY
+#> Bounding box:  xmin: -0.5 ymin: 0 xmax: 7.061358 ymax: 3.203063
+#> CRS:           NA
+#> # ggseg atlas
+#>    hemi  region            side    label                                geometry
+#>    <chr> <chr>             <chr>   <chr>                          <MULTIPOLYGON>
+#>  1 right <NA>              coronal <NA>                (((2.07673 2.70275, 2.07…
+#>  2 left  <NA>              coronal <NA>                (((0.50396 2.66412, 0.50…
+#>  3 left  thalamus proper   coronal Left-Thalamus-Prop… (((1.03233 1.13797, 1.03…
+#>  4 right thalamus proper   coronal Right-Thalamus-Pro… (((1.64163 1.63765, 1.65…
+#>  5 right lateral ventricle coronal Right-Lateral-Vent… (((1.64163 1.63765, 1.63…
+#>  6 left  hippocampus       coronal Left-Hippocampus    (((0.82329 0.59152, 0.82…
+#>  7 left  lateral ventricle coronal Left-Lateral-Ventr… (((0.97903 1.62907, 0.97…
+#>  8 right putamen           coronal Right-Putamen       (((2.21213 1.27837, 2.20…
+#>  9 right amygdala          coronal Right-Amygdala      (((1.92373 0.93533, 1.93…
+#> 10 left  putamen           coronal Left-Putamen        (((0.30664 0.98861, 0.30…
+#> # ℹ 19 more rows
+```
+
+For better or worse, the 1-to-1 isn’t true of the atlas, so we use
+`sf::st_combine()` and we just focus on one side.
+
+``` r
 coronal_ref_data <- ggseg::aseg$data |> 
-  filter(side == "coronal") |>
+  filter(side == "coronal") |>     # just look at coronal for the nuttiness.
   group_by(region) |> 
   summarise(geometry = sf::st_combine(geometry)) |> 
   select(region, everything())
   
-head(coronal_ref_data)
+coronal_ref_data |> pull(region)
+#> [1] "amygdala"          "caudate"           "hippocampus"      
+#> [4] "lateral ventricle" "pallidum"          "putamen"          
+#> [7] "thalamus proper"   "ventral DC"        NA
+```
+
+Also, “nut” can refer to the head/brain in English in informal speech.
+
+``` r
+geom_seg <- write_geom_region_locale(ref_data = coronal_ref_data)
+stamp_seg <- write_stamp_region_locale(ref_data = coronal_ref_data)
+geom_seg_text <- write_geom_region_text_locale(ref_data = coronal_ref_data)
+stamp_seg_text <- write_stamp_region_text_locale(ref_data = coronal_ref_data)
+
+library(ggseg) # library ggnut - a ggseg derivitive...
+
+ggplot() + 
+  stamp_seg() + 
+  stamp_seg(keep = "hippocampus", fill = "blue")
+#> Coordinate system already present.
+#> ℹ Adding new coordinate system, which will replace the existing one.
+```
+
+<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
+
+``` r
+
+last_plot() + 
+  stamp_seg(keep = "amygdala", fill = "magenta")
+#> Coordinate system already present.
+#> ℹ Adding new coordinate system, which will replace the existing one.
+```
+
+<img src="man/figures/README-unnamed-chunk-4-2.png" width="100%" />
+
+``` r
+
+last_plot() + 
+  stamp_seg(keep = "pallidum", fill = "orange")
+#> Coordinate system already present.
+#> ℹ Adding new coordinate system, which will replace the existing one.
+```
+
+<img src="man/figures/README-unnamed-chunk-4-3.png" width="100%" />
+
+Hmmm… below not working… Arg! puzzles.
+
+``` r
+coronal_ref_data |> head()
 #> Simple feature collection with 6 features and 1 field
 #> Geometry type: MULTIPOLYGON
 #> Dimension:     XY
@@ -40,251 +129,35 @@ head(coronal_ref_data)
 #> 5 pallidum          (((0.50883 1.27848, 0.51084 1.28315, 0.53129 1.32971, 0.533…
 #> 6 putamen           (((2.21213 1.27837, 2.20953 1.26015, 2.18353 1.07797, 2.180…
 
-coronal_ref_data |> pull(region)
-#> [1] "amygdala"          "caudate"           "hippocampus"      
-#> [4] "lateral ventricle" "pallidum"          "putamen"          
-#> [7] "thalamus proper"   "ventral DC"        NA
-```
-
-``` r
-geom_aseg <- function (mapping = aes(), data = NULL, stat = ggregions::StatRegion, position = "identity", 
-    na.rm = FALSE, show.legend = NA, inherit.aes = TRUE, ref_data = coronal_ref_data, 
-    ...) 
-{
-    c(layer_sf(geom = GeomSf, data = data, mapping = mapping, 
-        stat = stat, position = position, show.legend = show.legend, 
-        inherit.aes = inherit.aes, params = rlang::list2(na.rm = na.rm, 
-            ref_data = ref_data, ...)), coord_sf(crs = NULL))
-}
-
-
-stamp_brain <- function (mapping = aes(), data = ref_data, stat = ggregions:::StatRegion, 
-    position = "identity", na.rm = FALSE, show.legend = NA, inherit.aes = FALSE, 
-    ref_data = coronal_ref_data, ...) 
-{
-    c(layer_sf(geom = GeomSf, data = data, mapping = mapping, 
-        stat = stat, position = position, show.legend = show.legend, 
-        inherit.aes = inherit.aes, params = rlang::list2(na.rm = na.rm, 
-            ref_data = ref_data, stamp = T, ...)), coord_sf(crs = NULL))
-}
-
-geom_aseg_text <- function (mapping = aes(), data = NULL, stat = ggregions:::StatRegion, position = "identity", 
-    na.rm = FALSE, show.legend = NA, inherit.aes = TRUE, ref_data = coronal_ref_data, 
-    ...) 
-{
-    c(layer_sf(geom = GeomText, data = data, mapping = mapping, 
-        stat = stat, position = position, show.legend = show.legend, 
-        inherit.aes = inherit.aes, params = rlang::list2(na.rm = na.rm, 
-            ref_data = ref_data, ...)), coord_sf(crs = NULL))
-}
-
-stamp_brain_text <- function (mapping = aes(), data = ref_data, stat = ggregions:::StatRegion, 
-    position = "identity", na.rm = FALSE, show.legend = NA, inherit.aes = FALSE, 
-    ref_data = coronal_ref_data, ...) 
-{
-    c(layer_sf(geom = GeomText, data = data, mapping = mapping, 
-        stat = stat, position = position, show.legend = show.legend, 
-        inherit.aes = inherit.aes, params = rlang::list2(na.rm = na.rm, 
-            ref_data = ref_data, stamp = T, ...)), coord_sf(crs = NULL))
-}
-
-
-library(ggseg) # branch
-
-ggplot() + 
-  stamp_brain() + 
-  stamp_brain(keep = "hippocampus", fill = "blue")
+tribble(~region_name, ~activity,
+        "hippocampus", 1,
+        "amygdala", .2) |> 
+  ggplot() + 
+  aes(region = region_name,
+      alpha = activity) +
+  stamp_seg() + 
+  geom_seg()
 #> Coordinate system already present.
 #> ℹ Adding new coordinate system, which will replace the existing one.
+#> Joining with `by = join_by(region)`
 ```
 
-<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
 
 ``` r
 
-last_plot() + 
-  stamp_brain(keep = "amygdala", fill = "magenta")
-#> Coordinate system already present.
-#> ℹ Adding new coordinate system, which will replace the existing one.
+
+layer_data(i = 2)
+#> Joining with `by = join_by(region)`
+#>        region                       geometry          id xmin    xmax ymin
+#> 1    amygdala MULTIPOLYGON (((1.92373 0.9...    amygdala -0.5 2.99743    0
+#> 2 hippocampus MULTIPOLYGON (((0.82329 0.5... hippocampus -0.5 2.99743    0
+#>      ymax         x       y alpha PANEL group       label linetype stroke
+#> 1 3.19939 1.8889430 0.73929   0.1     1     1    amygdala        1    0.5
+#> 2 3.19939 0.6193356 0.61480   1.0     1     2 hippocampus        1    0.5
+#>      colour      fill linewidth
+#> 1 #595959FF #E5E5E5FF       0.2
+#> 2 #595959FF #E5E5E5FF       0.2
 ```
 
-<img src="man/figures/README-unnamed-chunk-3-2.png" width="100%" />
-
-``` r
-
-last_plot() + 
-  stamp_brain(keep = "brain stem", fill = "lateral ventricle")
-#> Coordinate system already present.
-#> ℹ Adding new coordinate system, which will replace the existing one.
-#> Warning: Computation failed in `stat_region()`.
-#> Caused by error in `coordinates[, "X"]`:
-#> ! no 'dimnames' attribute for array
-```
-
-<img src="man/figures/README-unnamed-chunk-3-3.png" width="100%" />
-
-``` r
-
-ggregions:::StatRegion$compute_panel
-#> <ggproto method>
-#>   <Wrapper function>
-#>     function (...) 
-#> compute_panel(...)
-#> 
-#>   <Inner function (f)>
-#>     function (data, scales, ref_data, keep = NULL, drop = NULL, stamp = F) 
-#> {
-#>     ref_data$id <- ref_data[1][[1]]
-#>     if (!is.null(keep)) {
-#>         ref_data <- dplyr::filter(ref_data, id %in% keep)
-#>     }
-#>     if (!is.null(drop)) {
-#>         ref_data <- dplyr::filter(ref_data, !(id %in% drop))
-#>     }
-#>     ref_data <- ggplot2::StatSfCoordinates$compute_group(ggplot2::StatSf$compute_panel(ref_data, 
-#>         coord = ggplot2::CoordSf), coord = ggplot2::CoordSf)
-#>     if (!stamp) {
-#>         dplyr::inner_join(ref_data, data)
-#>     }
-#>     else {
-#>         ref_data
-#>     }
-#> }
-```
-
-# ggseg <img src="man/figures/logo.png" align="right" alt="" width="138.5" />
-
-<!-- badges: start -->
-
-[![R build
-status](https://github.com/ggseg/ggseg/workflows/R-CMD-check/badge.svg)](https://github.com/ggseg/ggseg/actions)
-[![CRAN
-status](https://www.r-pkg.org/badges/version/ggseg)](https://CRAN.R-project.org/package=ggseg)
-[![downloads](https://CRANlogs.r-pkg.org/badges/last-month/ggseg?color=blue)](https://r-pkg.org/pkg/ggseg)
-[![codecov](https://codecov.io/gh/ggseg/ggseg/branch/main/graph/badge.svg?token=WtlS6Kk1vo)](https://app.codecov.io/gh/ggseg/ggseg)
-[![Lifecycle:
-maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html)
-[![Codecov test
-coverage](https://codecov.io/gh/ggseg/ggseg/graph/badge.svg)](https://app.codecov.io/gh/ggseg/ggseg)
-[![R-CMD-check](https://github.com/ggseg/ggseg/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ggseg/ggseg/actions/workflows/R-CMD-check.yaml)
-<!-- badges: end -->
-
-Contains ggplot2 geom for plotting brain atlases using simple features.
-The largest component of the package is the data for the two built-in
-atlases. Plotting results of analyses on regions or networks often
-involves swapping between statistical tools, like R, and software for
-brain imaging to correctly visualise analysis results.
-
-This package aims to make it possible to plot results directly through
-R.
-
-## Atlases
-
-There are currently four atlases available in the package:
-
-1.  `dk` - Desikan-Killiany atlas (aparc).  
-2.  `aseg` - Automatic subcortical segmentation.
-
-**Note:** As of version 1.5.3, `ggseg` was split into two packages: one
-for 2d polygon plots in ggplot, and another for 3d mesh plots through
-plotly. This was done to reduce package size, dependencies, and also to
-simplify maintenance. If you want the 3d plotting tool, please go the
-[ggseg3d repository](https://github.com/ggseg/ggseg3d).
-
-You may find more atlases and functions to create new atlases in the
-companion package [ggsegExtra](https://github.com/ggseg/ggsegExtra).
-
-## Installation
-
-The package can be installed from CRAN.
-
-``` r
-install.packages("ggseg")
-```
-
-Alternatively, ggseg may also be installed through its ggseg r-universe:
-
-``` r
-# Enable this universe
-options(repos = c(
-    ggseg = 'https://ggseg.r-universe.dev',
-    CRAN = 'https://cloud.r-project.org'))
-
-# Install some packages
-install.packages('ggseg')
-```
-
-The development version of the package can be installed using devtools.
-
-``` r
-install.packages("remotes")
-remotes::install_github("ggseg/ggseg")
-```
-
-The functions are now installed, and you may load them when you want to
-use them. All functions are documented in standard R fashion.
-
-## Use
-
-``` r
-library(ggseg)
-library(ggplot2)
-plot(dk)
-```
-
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
-
-``` r
-plot(aseg)
-```
-
-<img src="man/figures/README-unnamed-chunk-6-2.png" width="100%" />
-
-While default atlas plots will give you an idea of how the atlases look,
-you will likely want to project your own data onto the plot.
-
-``` r
-library(dplyr)
-some_data <- tibble(
-  region = rep(c("transverse temporal", "insula",
-           "precentral","superior parietal"), 2), 
-  p = sample(seq(0,.5,.001), 8),
-  groups = c(rep("g1", 4), rep("g2", 4))
-)
-
-some_data |>
-  group_by(groups) |>
-  ggplot() +
-  geom_brain(atlas = dk, 
-             position = position_brain(hemi ~ side),
-             aes(fill = p)) +
-  facet_wrap(~groups)
-#> merging atlas and data by 'region'
-```
-
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
-
-The package also has several vignettes, to help you get started using
-it. You can access it [here](https://ggseg.github.io/ggseg/)
-
-You can also see one of the creators blog for introductions to its use
-[here](https://drmowinckels.io/blog/2021-03-14-new-ggseg-with-geom/)
-
-### Report bugs or requests
-
-Don’t hesitate to ask for support using [github
-issues](https://github.com/ggseg/ggseg/issues), or requesting new
-atlases. While we would love getting help in creating new atlases, you
-may also request atlases through the issues, and we will try to get to
-it.
-
-# Funding
-
-This tool is partly funded by:
-
-**EU Horizon 2020 Grant:** Healthy minds 0-100 years: Optimising the use
-of European brain imaging cohorts (Lifebrain).
-
-**Grant agreement number:** 732592.
-
-**Call:** Societal challenges: Health, demographic change and well-being
+![](https://images.unsplash.com/photo-1626012109496-21f579f648dd?q=80&w=1160&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)
