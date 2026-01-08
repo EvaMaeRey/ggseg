@@ -14,6 +14,89 @@ knitr::opts_chunk$set(
 )
 ``` 
  
+This branch of the ggseg project uses `ggregions` to create an alternate API for newcomers to brain regions.
+
+
+First, we make this data simpler (collapse the sub-regions) so that it can work with the ggregions assumptions. 
+
+
+
+```{r}
+library(ggregions)
+library(ggplot2)
+library(dplyr)
+
+coronal_ref_data <- ggseg::aseg$data |> 
+  filter(side == "coronal") |>
+  group_by(region) |> 
+  summarise(geometry = sf::st_combine(geometry)) |> 
+  select(region, everything())
+  
+head(coronal_ref_data)
+
+coronal_ref_data |> pull(region)
+```
+
+
+
+
+```{r}
+geom_aseg <- function (mapping = aes(), data = NULL, stat = ggregions::StatRegion, position = "identity", 
+    na.rm = FALSE, show.legend = NA, inherit.aes = TRUE, ref_data = coronal_ref_data, 
+    ...) 
+{
+    c(layer_sf(geom = GeomSf, data = data, mapping = mapping, 
+        stat = stat, position = position, show.legend = show.legend, 
+        inherit.aes = inherit.aes, params = rlang::list2(na.rm = na.rm, 
+            ref_data = ref_data, ...)), coord_sf(crs = NULL))
+}
+
+
+stamp_brain <- function (mapping = aes(), data = ref_data, stat = ggregions:::StatRegion, 
+    position = "identity", na.rm = FALSE, show.legend = NA, inherit.aes = FALSE, 
+    ref_data = coronal_ref_data, ...) 
+{
+    c(layer_sf(geom = GeomSf, data = data, mapping = mapping, 
+        stat = stat, position = position, show.legend = show.legend, 
+        inherit.aes = inherit.aes, params = rlang::list2(na.rm = na.rm, 
+            ref_data = ref_data, stamp = T, ...)), coord_sf(crs = NULL))
+}
+
+geom_aseg_text <- function (mapping = aes(), data = NULL, stat = ggregions:::StatRegion, position = "identity", 
+    na.rm = FALSE, show.legend = NA, inherit.aes = TRUE, ref_data = coronal_ref_data, 
+    ...) 
+{
+    c(layer_sf(geom = GeomText, data = data, mapping = mapping, 
+        stat = stat, position = position, show.legend = show.legend, 
+        inherit.aes = inherit.aes, params = rlang::list2(na.rm = na.rm, 
+            ref_data = ref_data, ...)), coord_sf(crs = NULL))
+}
+
+stamp_brain_text <- function (mapping = aes(), data = ref_data, stat = ggregions:::StatRegion, 
+    position = "identity", na.rm = FALSE, show.legend = NA, inherit.aes = FALSE, 
+    ref_data = coronal_ref_data, ...) 
+{
+    c(layer_sf(geom = GeomText, data = data, mapping = mapping, 
+        stat = stat, position = position, show.legend = show.legend, 
+        inherit.aes = inherit.aes, params = rlang::list2(na.rm = na.rm, 
+            ref_data = ref_data, stamp = T, ...)), coord_sf(crs = NULL))
+}
+
+
+library(ggseg) # branch
+
+ggplot() + 
+  stamp_brain() + 
+  stamp_brain(keep = "hippocampus", fill = "blue")
+
+last_plot() + 
+  stamp_brain(keep = "amygdala", fill = "magenta")
+
+last_plot() + 
+  stamp_brain(keep = "brain stem", fill = "lateral ventricle")
+
+ggregions:::StatRegion$compute_panel
+```
 
 # ggseg <img src="man/figures/logo.png" align="right" alt="" width="138.5" />  
 <!-- badges: start -->
