@@ -110,7 +110,9 @@ last_plot() +
 
 <img src="man/figures/README-unnamed-chunk-4-3.png" width="100%" />
 
-Hmmm… below not working… Arg! puzzles.
+Hmmm… below not working… Arg! puzzles - Oops it is working but, not
+apparent when I had alpha showing activity w/ no color… Maybe should
+change default fill of stamp v. geom in ggregions.
 
 ``` r
 coronal_ref_data |> head()
@@ -135,29 +137,13 @@ tribble(~region_name, ~activity,
   ggplot() + 
   aes(region = region_name,
       alpha = activity) +
-  stamp_seg() + 
-  geom_seg()
+  stamp_seg() +
+  geom_seg(fill = "blue")
 #> Coordinate system already present.
 #> ℹ Adding new coordinate system, which will replace the existing one.
 #> Joining with `by = join_by(region)`
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
-
-``` r
-
-
-layer_data(i = 2)
-#> Joining with `by = join_by(region)`
-#>        region                       geometry          id xmin    xmax ymin
-#> 1    amygdala MULTIPOLYGON (((1.92373 0.9...    amygdala -0.5 2.99743    0
-#> 2 hippocampus MULTIPOLYGON (((0.82329 0.5... hippocampus -0.5 2.99743    0
-#>      ymax         x       y alpha PANEL group       label linetype stroke
-#> 1 3.19939 1.8889430 0.73929   0.1     1     1    amygdala        1    0.5
-#> 2 3.19939 0.6193356 0.61480   1.0     1     2 hippocampus        1    0.5
-#>      colour      fill linewidth
-#> 1 #595959FF #E5E5E5FF       0.2
-#> 2 #595959FF #E5E5E5FF       0.2
-```
 
 ![](https://images.unsplash.com/photo-1626012109496-21f579f648dd?q=80&w=1160&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)

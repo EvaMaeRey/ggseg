@@ -73,7 +73,7 @@ last_plot() +
 
 
 
-Hmmm... below not working... Arg! puzzles.
+Hmmm... below not working... Arg! puzzles - Oops it is working but, not apparent when I had alpha showing activity w/ no color... Maybe should change default fill of stamp v. geom in ggregions.
 
 ```{r}
 coronal_ref_data |> head()
@@ -84,11 +84,8 @@ tribble(~region_name, ~activity,
   ggplot() + 
   aes(region = region_name,
       alpha = activity) +
-  stamp_seg() + 
-  geom_seg()
-
-
-layer_data(i = 2)
+  stamp_seg() +
+  geom_seg(fill = "blue")
 ```
 
 
